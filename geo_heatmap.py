@@ -61,14 +61,16 @@ class Generator:
         with ProgressBar(max_value=len(data["semanticSegments"]), widgets=w) as pb:
             for i, loc in enumerate(data["semanticSegments"]):
                 if "visit" in loc:
-                    coord_string = loc["visit"]["topCandidate"]["placeLocation"]["latLng"]
-                    coords = (coord_string.split("°")[0][:-1], coord_string.split("°")[1].split(" ")[1][:-1])
-                    self.updateCoord(coords)
+                    if timestampInRange(loc["startTime"], date_range):
+                        coord_string = loc["visit"]["topCandidate"]["placeLocation"]["latLng"]
+                        coords = (coord_string.split("°")[0][:-1], coord_string.split("°")[1].split(" ")[1][:-1])
+                        self.updateCoord(coords)
                 elif "timelinePath" in loc:
                     for path_point in loc["timelinePath"]:
-                        coord_string = path_point["point"]
-                        coords = (coord_string.split("°")[0][:-1], coord_string.split("°")[1].split(" ")[1][:-1])                        
-                        self.updateCoord(coords)
+                        if timestampInRange(path_point["time"], date_range):
+                            coord_string = path_point["point"]
+                            coords = (coord_string.split("°")[0][:-1], coord_string.split("°")[1].split(" ")[1][:-1])                        
+                            self.updateCoord(coords)
                 pb.update(i)
 
     def streamJSONData(self, json_file, date_range):
