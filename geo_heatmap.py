@@ -53,20 +53,16 @@ class Generator:
         """
         data = json.load(json_file)
 
-        # Find the correct key for timestamps
-        first_element = data["semanticSegments"][0]
-        key_timestamp = self.findTimestampKey(first_element)
-
         w = [Bar(), Percentage(), " ", ETA()]
         with ProgressBar(max_value=len(data["semanticSegments"]), widgets=w) as pb:
-            for i, loc in enumerate(data["semanticSegments"]):
-                if "visit" in loc:
-                    if timestampInRange(loc["startTime"], date_range):
-                        coord_string = loc["visit"]["topCandidate"]["placeLocation"]["latLng"]
+            for i, seg in enumerate(data["semanticSegments"]):
+                if "visit" in seg:
+                    if timestampInRange(seg["startTime"], date_range):
+                        coord_string = seg["visit"]["topCandidate"]["placeLocation"]["latLng"]
                         coords = (coord_string.split("°")[0][:-1], coord_string.split("°")[1].split(" ")[1][:-1])
                         self.updateCoord(coords)
-                elif "timelinePath" in loc:
-                    for path_point in loc["timelinePath"]:
+                elif "timelinePath" in seg:
+                    for path_point in seg["timelinePath"]:
                         if timestampInRange(path_point["time"], date_range):
                             coord_string = path_point["point"]
                             coords = (coord_string.split("°")[0][:-1], coord_string.split("°")[1].split(" ")[1][:-1])                        
@@ -86,22 +82,21 @@ class Generator:
         max_value_est = sum(1 for line in json_file) / 13
         json_file.seek(0)
 
-        locations = ijson.items(json_file, "locations.item")
+        segments = ijson.items(json_file, "semanticSegments.item")
         w = [Bar(), Percentage(), " ", ETA()]
         with ProgressBar(max_value=max_value_est, widgets=w) as pb:
-            for i, loc in enumerate(locations):
-                # Find the correct key for timestamps
-                # This is done in the loop because the data are streamed
-                if i == 0:
-                    key_timestamp = self.findTimestampKey(loc)
-
-                if "latitudeE7" not in loc or "longitudeE7" not in loc:
-                    continue
-                coords = (round(loc["latitudeE7"] / 1e7, 6),
-                            round(loc["longitudeE7"] / 1e7, 6))
-
-                if timestampInRange(loc[key_timestamp], date_range):
-                    self.updateCoord(coords)
+            for i, seg in enumerate(segments):
+                if "visit" in seg:
+                    if timestampInRange(seg["startTime"], date_range):
+                        coord_string = seg["visit"]["topCandidate"]["placeLocation"]["latLng"]
+                        coords = (coord_string.split("°")[0][:-1], coord_string.split("°")[1].split(" ")[1][:-1])
+                        self.updateCoord(coords)
+                elif "timelinePath" in seg:
+                    for path_point in seg["timelinePath"]:
+                        if timestampInRange(path_point["time"], date_range):
+                            coord_string = path_point["point"]
+                            coords = (coord_string.split("°")[0][:-1], coord_string.split("°")[1].split(" ")[1][:-1])                        
+                            self.updateCoord(coords)
 
                 if i > max_value_est:
                     max_value_est = i
