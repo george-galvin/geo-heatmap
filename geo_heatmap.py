@@ -54,19 +54,21 @@ class Generator:
         data = json.load(json_file)
 
         # Find the correct key for timestamps
-        first_element = data["locations"][0]
+        first_element = data["semanticSegments"][0]
         key_timestamp = self.findTimestampKey(first_element)
 
         w = [Bar(), Percentage(), " ", ETA()]
-        with ProgressBar(max_value=len(data["locations"]), widgets=w) as pb:
-            for i, loc in enumerate(data["locations"]):
-                if "latitudeE7" not in loc or "longitudeE7" not in loc:
-                    continue
-                coords = (round(loc["latitudeE7"] / 1e7, 6),
-                           round(loc["longitudeE7"] / 1e7, 6))
-
-                if timestampInRange(loc[key_timestamp], date_range):
+        with ProgressBar(max_value=len(data["semanticSegments"]), widgets=w) as pb:
+            for i, loc in enumerate(data["semanticSegments"]):
+                if "visit" in loc:
+                    coord_string = loc["visit"]["topCandidate"]["placeLocation"]["latLng"]
+                    coords = (coord_string.split("°")[0][:-1], coord_string.split("°")[1].split(" ")[1][:-1])
                     self.updateCoord(coords)
+                elif "timelinePath" in loc:
+                    for path_point in loc["timelinePath"]:
+                        coord_string = path_point["point"]
+                        coords = (coord_string.split("°")[0][:-1], coord_string.split("°")[1].split(" ")[1][:-1])                        
+                        self.updateCoord(coords)
                 pb.update(i)
 
     def streamJSONData(self, json_file, date_range):
