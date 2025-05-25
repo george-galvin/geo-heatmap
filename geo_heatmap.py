@@ -219,7 +219,6 @@ class Generator:
 
         # Generate heat map
         heatmap = HeatMap(map_data,
-                          max_val=self.max_magnitude,
                           min_opacity=min_opacity,
                           radius=radius,
                           blur=blur,
